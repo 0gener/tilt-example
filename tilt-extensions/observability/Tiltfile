@@ -1,0 +1,21 @@
+k8s_yaml('namespace.yaml')
+k8s_yaml('prometheus-configmap.yaml')
+
+# Load the Helm extension
+load('ext://helm_resource', 'helm_resource')
+
+# Use Helm to install Prometheus
+helm_resource(
+    name='prometheus',
+    chart='prometheus-community/prometheus',
+    namespace='observability',
+    flags=['--values=prometheus-values.yaml']
+)
+
+# Install Grafana with the custom values
+helm_resource(
+    name='grafana',
+    chart='grafana/grafana',
+    namespace='observability',
+    flags=['--values=./grafana-values.yaml', '--set=adminPassword=password']
+)
