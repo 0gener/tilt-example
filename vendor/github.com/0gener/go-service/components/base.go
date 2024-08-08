@@ -14,6 +14,7 @@ type BaseComponent struct {
 	statusChan chan Status
 	status     Status
 	mu         sync.RWMutex
+	manager    *Manager
 }
 
 func NewBaseComponent(name string) *BaseComponent {
@@ -82,4 +83,14 @@ func (bc *BaseComponent) GetStatus() Status {
 	bc.mu.RLock()
 	defer bc.mu.RUnlock()
 	return bc.status
+}
+
+// SetDependencyManager sets the component's manager.
+func (bc *BaseComponent) SetDependencyManager(manager *Manager) {
+	bc.manager = manager
+}
+
+// Dependency loads a dependency.
+func (bc *BaseComponent) Dependency(name string) Component {
+	return bc.manager.LoadComponent(name)
 }

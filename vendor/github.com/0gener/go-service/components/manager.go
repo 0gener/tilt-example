@@ -3,8 +3,6 @@ package components
 import (
 	"context"
 	"fmt"
-	"sync"
-
 	"github.com/0gener/go-service/internal/logfields"
 	"github.com/hashicorp/go-multierror"
 	"go.uber.org/zap"
@@ -35,6 +33,7 @@ func (m *Manager) Register(component Component, opts ...Option) {
 func (m *Manager) Configure(ctx context.Context, logger *zap.Logger) error {
 	for _, component := range m.components {
 		componentName := component.Name()
+		component.SetDependencyManager(m)
 		component.SetLogger(logger.With(zap.String(logfields.Component, componentName)))
 
 		component.Logger().Info("configuring component")
@@ -46,6 +45,7 @@ func (m *Manager) Configure(ctx context.Context, logger *zap.Logger) error {
 		if err := m.executeAndWaitForStatus(ctx, component, func() error {
 			return component.Configure()
 		}, CONFIGURED); err != nil {
+			component.Logger().Error("failed to configure component", zap.Error(err))
 			return fmt.Errorf("failed to configure component: %w", err)
 		}
 	}
@@ -59,6 +59,7 @@ func (m *Manager) Start(ctx context.Context) error {
 	for _, component := range m.components {
 		component.Logger().Info("starting component")
 		if err := m.executeAndWaitForStatus(ctx, component, component.Start, STARTED); err != nil {
+			component.Logger().Error("failed to start component", zap.Error(err))
 			return fmt.Errorf("failed to start component: %w", err)
 		}
 
@@ -69,10 +70,8 @@ func (m *Manager) Start(ctx context.Context) error {
 }
 
 // Shutdown shutdowns all registered components.
-//
-//goland:noinspection GoDfaNilDereference
 func (m *Manager) Shutdown(ctx context.Context) error {
-	var err *multierror.Error
+	var err error
 
 	for _, component := range m.components {
 		component.Logger().Info("shutting down component")
@@ -82,12 +81,23 @@ func (m *Manager) Shutdown(ctx context.Context) error {
 		}
 	}
 
-	return err.ErrorOrNil()
+	return err
 }
 
 // SendRuntimeError sends an error to the internal runtime error channel. This is supposed to be used only in tests.
 func (m *Manager) SendRuntimeError(err error) {
 	m.runtimeErrChan <- err
+}
+
+// LoadComponent returns a component by name.
+func (m *Manager) LoadComponent(name string) Component {
+	for _, component := range m.components {
+		if component.Name() == name {
+			return component
+		}
+	}
+
+	return nil
 }
 
 // Wait blocks the execution until a component errors or until the context is finished.
@@ -101,21 +111,14 @@ func (m *Manager) wait(ctx context.Context) error {
 }
 
 func (m *Manager) executeAndWaitForStatus(ctx context.Context, component Component, fn func() error, expectedStatus Status) error {
-	var wg sync.WaitGroup
 	errChan := make(chan error, 1)
 	statusChan := component.StatusChan()
 
-	// Executes fn in a goroutine because it might be a blocking call.
-	wg.Add(1)
 	go func() {
-		defer wg.Done()
 		if err := fn(); err != nil {
 			errChan <- err
 		}
 	}()
-
-	// Ensure the function call is completed before proceeding.
-	// wg.Wait()
 
 	select {
 	case newStatus := <-statusChan:

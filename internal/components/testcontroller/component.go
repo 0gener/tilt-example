@@ -22,6 +22,12 @@ func New() *Component {
 }
 
 func (c *Component) Configure() error {
+	var err error
+	c.httpComponent, err = components.AsComponent[*httpComp.Component](c.Dependency(httpComp.ComponentName))
+	if err != nil {
+		return err
+	}
+
 	c.httpComponent.RegisterRoutes(
 		httpComp.Route{
 			RelativePath: "/v1/test",
@@ -29,10 +35,11 @@ func (c *Component) Configure() error {
 			Handlers:     []gin.HandlerFunc{handleTest},
 		},
 	)
+
 	c.NotifyStatus(components.CONFIGURED)
 	return nil
 }
 
 func handleTest(c *gin.Context) {
-	c.Status(http.StatusBadRequest)
+	c.Status(http.StatusOK)
 }

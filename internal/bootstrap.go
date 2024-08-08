@@ -11,17 +11,10 @@ const (
 )
 
 func Bootstrap() error {
-	httpComponent := http.New()
-
 	svc, err := service.New(
 		ServiceName,
-		service.WithComponent(
-			httpComponent,
-		),
-		service.WithComponent(
-			testcontroller.New(),
-			testcontroller.WithHTTPComponent(httpComponent),
-		),
+		service.WithComponent(http.New()),
+		service.WithComponent(testcontroller.New()),
 	)
 	if err != nil {
 		return err

@@ -27,8 +27,13 @@ func (s Status) String() string {
 }
 
 // AsComponent performs the type assertion to the desired component type
-func AsComponent[T any](component interface{}) (T, error) {
+func AsComponent[T any](component Component) (T, error) {
 	var target T
+
+	if component == nil {
+		return target, ErrNilComponent
+	}
+
 	if reflect.TypeOf(component) != reflect.TypeOf(target) {
 		return target, &ErrWrongComponent{ExpectedType: reflect.TypeOf(target).String()}
 	}
@@ -63,4 +68,10 @@ type Component interface {
 
 	// StatusChan returns the component's channel for outputting status updates.
 	StatusChan() <-chan Status
+
+	// SetDependencyManager sets the component's manager.
+	SetDependencyManager(manager *Manager)
+
+	// Dependency loads a dependency.
+	Dependency(name string) Component
 }

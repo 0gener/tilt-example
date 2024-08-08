@@ -3,7 +3,7 @@ module github.com/0gener/tilt-example
 go 1.22.4
 
 require (
-	github.com/0gener/go-service v0.0.0-20240626214007-be7be6e99430
+	github.com/0gener/go-service v0.0.1
 	github.com/gin-gonic/gin v1.10.0
 )
 

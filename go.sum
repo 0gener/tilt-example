@@ -1,5 +1,5 @@
-github.com/0gener/go-service v0.0.0-20240626214007-be7be6e99430 h1:ThxpL+/wQE82n/ATJqZLI+qcerUX9u9LB8EYACxtcBE=
-github.com/0gener/go-service v0.0.0-20240626214007-be7be6e99430/go.mod h1:Hxz90Wdh7PMLLgGhwhvv3hOrs8Z9/SmZtCMN8aACy8k=
+github.com/0gener/go-service v0.0.1 h1:5xqAUVAdZ+f/0gUx2V3l+ucv5HsJR/yq3dbFUlYjujI=
+github.com/0gener/go-service v0.0.1/go.mod h1:Hxz90Wdh7PMLLgGhwhvv3hOrs8Z9/SmZtCMN8aACy8k=
 github.com/beorn7/perks v1.0.1 h1:VlbKKnNfV8bJzeqoa4cOKqO6bYr3WgKZxO8Z16+hsOM=
 github.com/beorn7/perks v1.0.1/go.mod h1:G2ZrVWU2WbWT9wwq4/hrbKbnv/1ERSJQ0ibhJ6rlkpw=
 github.com/bytedance/sonic v1.11.6 h1:oUp34TzMlL+OY1OUWxHqsdkgC/Zfc85zGqw9siXjrc0=

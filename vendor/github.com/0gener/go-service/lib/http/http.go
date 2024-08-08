@@ -105,6 +105,7 @@ func (c *Component) Start() error {
 // Shutdown performs actions required to gracefully shutdown the component lifecycle.
 func (c *Component) Shutdown() error {
 	if c.server == nil {
+		c.NotifyStatus(components.STOPPED)
 		return nil
 	}
 

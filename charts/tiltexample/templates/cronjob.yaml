@@ -1,0 +1,24 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: api-request-cronjob
+  namespace: {{ .Release.Namespace }}
+spec:
+  schedule: "* * * * *" # Every minute
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+            - name: api-request
+              image: curlimages/curl:7.85.0
+              args:
+                - "/bin/sh"
+                - "-c"
+                - |
+                  echo "Starting job..."
+                  for i in $(seq 1 1000); do
+                    curl -s -o /dev/null http://tiltexample.tiltexample.svc.cluster.local:8080/v1/test
+                  done
+                  echo "Finishing job..."
+          restartPolicy: OnFailure
