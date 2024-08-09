@@ -4,8 +4,8 @@ import (
 	"github.com/0gener/go-service/lib/http"
 	"github.com/0gener/go-service/lib/postgres"
 	"github.com/0gener/go-service/service"
-	"github.com/0gener/tilt-example/internal/components/testcontroller"
-	"github.com/0gener/tilt-example/internal/components/usersrepository"
+	"github.com/0gener/tilt-example/internal/components/controller"
+	"github.com/0gener/tilt-example/internal/components/repository"
 )
 
 const (
@@ -25,8 +25,8 @@ func Bootstrap() error {
 			postgres.WithConnectionString(cfg.Database.ConnectionString),
 			postgres.WithMigrationsDir(cfg.Database.MigrationsDir),
 		),
-		service.WithComponent(usersrepository.New()),
-		service.WithComponent(testcontroller.New()),
+		service.WithComponent(repository.New()),
+		service.WithComponent(controller.New()),
 	)
 	if err != nil {
 		return err
