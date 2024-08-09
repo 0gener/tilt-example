@@ -15,8 +15,8 @@ const ComponentName = "items_controller"
 type Component struct {
 	components.BaseComponent
 
-	httpComponent *httpComp.Component
-	repo          *repository.Component
+	http *httpComp.Component
+	repo *repository.Component
 }
 
 func New() *Component {
@@ -25,39 +25,39 @@ func New() *Component {
 	}
 }
 
-func (c *Component) Configure(_ context.Context) error {
+func (component *Component) Configure(_ context.Context) error {
 	var err error
-	c.httpComponent, err = components.AsComponent[*httpComp.Component](c.Dependency(httpComp.ComponentName))
+	component.http, err = components.AsComponent[*httpComp.Component](component.Dependency(httpComp.ComponentName))
 	if err != nil {
 		return err
 	}
 
-	c.httpComponent.RegisterRoutes(
+	component.http.RegisterRoutes(
 		httpComp.Route{
 			RelativePath: "/v1/items",
 			HTTPMethod:   http.MethodPost,
-			Handlers:     []gin.HandlerFunc{c.createItem},
+			Handlers:     []gin.HandlerFunc{component.createItem},
 		},
 		httpComp.Route{
 			RelativePath: "/v1/items",
 			HTTPMethod:   http.MethodGet,
-			Handlers:     []gin.HandlerFunc{c.getItems},
+			Handlers:     []gin.HandlerFunc{component.getItems},
 		},
 	)
 
-	c.repo, err = components.AsComponent[*repository.Component](c.Dependency(repository.ComponentName))
+	component.repo, err = components.AsComponent[*repository.Component](component.Dependency(repository.ComponentName))
 	if err != nil {
 		return err
 	}
 
-	c.NotifyStatus(components.CONFIGURED)
+	component.NotifyStatus(components.CONFIGURED)
 	return nil
 }
 
-func (c *Component) createItem(ctx *gin.Context) {
+func (component *Component) createItem(c *gin.Context) {
 	var req CreateItemRequest
-	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.JSON(http.StatusBadRequest, &ErrorResponse{
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, &ErrorResponse{
 			Error: err.Error(),
 		})
 		return
@@ -68,27 +68,27 @@ func (c *Component) createItem(ctx *gin.Context) {
 		Name:        req.Name,
 		Description: req.Description,
 	}
-	err := c.repo.InsertItem(context.Background(), insertItem)
+	err := component.repo.InsertItem(context.Background(), insertItem)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, &ErrorResponse{
+		c.JSON(http.StatusInternalServerError, &ErrorResponse{
 			Error: err.Error(),
 		})
 		return
 	}
 
-	ctx.JSON(http.StatusCreated, &CreateItemResponse{
+	c.JSON(http.StatusCreated, &CreateItemResponse{
 		ID:          insertItem.ID,
 		Name:        insertItem.Name,
 		Description: insertItem.Description,
 	})
 }
 
-func (c *Component) getItems(ctx *gin.Context) {
-	items, err := c.repo.GetItems(context.Background())
+func (component *Component) getItems(c *gin.Context) {
+	items, err := component.repo.GetItems(context.Background())
 	if err != nil {
-		ctx.Status(http.StatusInternalServerError)
+		c.Status(http.StatusInternalServerError)
 		return
 	}
 
-	ctx.JSON(http.StatusOK, MapItemsToResponse(items))
+	c.JSON(http.StatusOK, MapItemsToResponse(items))
 }

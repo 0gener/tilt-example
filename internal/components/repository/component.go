@@ -12,7 +12,7 @@ const ComponentName = "items_repository"
 type Component struct {
 	components.BaseComponent
 
-	postgresComponent *postgres.Component
+	psql *postgres.Component
 }
 
 func New() *Component {
@@ -23,7 +23,7 @@ func New() *Component {
 
 func (c *Component) Configure(_ context.Context) error {
 	var err error
-	c.postgresComponent, err = components.AsComponent[*postgres.Component](c.Dependency(postgres.ComponentName))
+	c.psql, err = components.AsComponent[*postgres.Component](c.Dependency(postgres.ComponentName))
 	if err != nil {
 		return err
 	}
@@ -38,7 +38,7 @@ func (c *Component) InsertItem(ctx context.Context, item InsertItem) error {
         VALUES ($1, $2, $3)
     `
 
-	_, err := c.postgresComponent.Pool().Exec(ctx, query, item.ID, item.Name, item.Description)
+	_, err := c.psql.Pool().Exec(ctx, query, item.ID, item.Name, item.Description)
 	if err != nil {
 		return fmt.Errorf("failed to insert user: %w", err)
 	}
@@ -52,7 +52,7 @@ func (c *Component) GetItems(ctx context.Context) ([]Item, error) {
 		FROM items
 	`
 
-	rows, err := c.postgresComponent.Pool().Query(ctx, query)
+	rows, err := c.psql.Pool().Query(ctx, query)
 	if err != nil {
 		return nil, fmt.Errorf("failed to retrieve items: %w", err)
 	}
