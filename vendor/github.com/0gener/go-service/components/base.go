@@ -1,6 +1,7 @@
 package components
 
 import (
+	"context"
 	"sync"
 
 	"go.uber.org/zap"
@@ -34,17 +35,17 @@ func (bc *BaseComponent) DefaultOptions() []Option {
 	return []Option{}
 }
 
-func (bc *BaseComponent) Configure() error {
+func (bc *BaseComponent) Configure(_ context.Context) error {
 	bc.NotifyStatus(CONFIGURED)
 	return nil
 }
 
-func (bc *BaseComponent) Start() error {
+func (bc *BaseComponent) Start(_ context.Context) error {
 	bc.NotifyStatus(STARTED)
 	return nil
 }
 
-func (bc *BaseComponent) Shutdown() error {
+func (bc *BaseComponent) Shutdown(_ context.Context) error {
 	bc.NotifyStatus(STOPPED)
 	return nil
 }

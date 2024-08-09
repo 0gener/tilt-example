@@ -22,11 +22,13 @@ FROM gcr.io/distroless/base-debian12
 
 # Set environment variable for Gin mode
 ENV GIN_MODE=release
+ENV DATABASE_MIGRATIONS_DIR="/app/migrations"
 
 # Set the working directory inside the final container
 WORKDIR /app
 
 # Copy the built Go binary from the builder stage
+COPY --from=builder /app/internal/migrations $DATABASE_MIGRATIONS_DIR
 COPY --from=builder /go/bin/tiltexample /app/
 
 # Run as non-root user

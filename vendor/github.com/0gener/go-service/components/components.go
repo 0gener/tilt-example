@@ -1,6 +1,7 @@
 package components
 
 import (
+	"context"
 	"reflect"
 
 	"go.uber.org/zap"
@@ -46,13 +47,13 @@ type Component interface {
 	DefaultOptions() []Option
 
 	// Configure performs initial component setup.
-	Configure() error
+	Configure(ctx context.Context) error
 
 	// Start performs actions required to begin the component lifecycle.
-	Start() error
+	Start(ctx context.Context) error
 
 	// Shutdown performs actions required to gracefully shutdown the component lifecycle.
-	Shutdown() error
+	Shutdown(ctx context.Context) error
 
 	// Name returns the name of the component.
 	Name() string

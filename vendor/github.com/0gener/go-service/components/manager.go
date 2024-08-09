@@ -42,9 +42,7 @@ func (m *Manager) Configure(ctx context.Context, logger *zap.Logger) error {
 			return fmt.Errorf("failed to apply options to component: %w", err)
 		}
 
-		if err := m.executeAndWaitForStatus(ctx, component, func() error {
-			return component.Configure()
-		}, CONFIGURED); err != nil {
+		if err := m.executeAndWaitForStatus(ctx, component, component.Configure, CONFIGURED); err != nil {
 			component.Logger().Error("failed to configure component", zap.Error(err))
 			return fmt.Errorf("failed to configure component: %w", err)
 		}
@@ -110,12 +108,12 @@ func (m *Manager) wait(ctx context.Context) error {
 	}
 }
 
-func (m *Manager) executeAndWaitForStatus(ctx context.Context, component Component, fn func() error, expectedStatus Status) error {
+func (m *Manager) executeAndWaitForStatus(ctx context.Context, component Component, fn func(ctx context.Context) error, expectedStatus Status) error {
 	errChan := make(chan error, 1)
 	statusChan := component.StatusChan()
 
 	go func() {
-		if err := fn(); err != nil {
+		if err := fn(ctx); err != nil {
 			errChan <- err
 		}
 	}()

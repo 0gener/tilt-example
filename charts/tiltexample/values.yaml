@@ -6,6 +6,9 @@ prometheus:
   path: "/metrics"
   port: "8080"
 
+database:
+  connection_string: "postgres://username:password@hostname:1234/dbname?sslmode=disable"
+
 image:
   repository: "repo"
   tag: "tag"
