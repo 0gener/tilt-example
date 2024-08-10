@@ -41,54 +41,58 @@ func New() *Component {
 	}
 }
 
-func (c *Component) Configure(ctx context.Context) error {
+func (component *Component) Configure(ctx context.Context) error {
 	var err error
 
-	if c.connectionString == "" {
+	if component.connectionString == "" {
 		return ErrConnectionStringRequired
 	}
 
-	c.pool, err = pgxpool.New(ctx, c.connectionString)
+	component.pool, err = pgxpool.New(ctx, component.connectionString)
 	if err != nil {
 		return err
 	}
 
-	c.NotifyStatus(components.CONFIGURED)
+	component.NotifyStatus(components.CONFIGURED)
 	return nil
 }
 
-func (c *Component) Start(ctx context.Context) error {
-	err := c.retryPing(ctx)
+func (component *Component) Start(ctx context.Context) error {
+	err := component.retryPing(ctx)
 	if err != nil {
 		return err
 	}
 
-	c.Logger().Info("reached database successfully")
+	component.Logger().Info("reached database successfully")
 
-	err = c.runMigrations()
+	err = component.runMigrations()
 	if err != nil {
 		return err
 	}
 
-	c.NotifyStatus(components.STARTED)
+	component.NotifyStatus(components.STARTED)
 	return nil
 }
 
-func (c *Component) Shutdown(_ context.Context) error {
-	if c.pool != nil {
-		c.pool.Close()
+func (component *Component) Shutdown(_ context.Context) error {
+	if component.pool != nil {
+		component.pool.Close()
 	}
-	c.NotifyStatus(components.STOPPED)
+	component.NotifyStatus(components.STOPPED)
 	return nil
 }
 
-func (c *Component) Pool() *pgxpool.Pool {
-	return c.pool
+func (component *Component) Monitor(ctx context.Context) error {
+	return component.pool.Ping(ctx)
 }
 
-func (c *Component) retryPing(ctx context.Context) error {
+func (component *Component) Pool() *pgxpool.Pool {
+	return component.pool
+}
+
+func (component *Component) retryPing(ctx context.Context) error {
 	return retry.Do(func() error {
-		return c.pool.Ping(context.TODO())
+		return component.pool.Ping(context.TODO())
 	},
 		retry.Context(ctx),
 		retry.DelayType(retry.BackOffDelay),
@@ -96,25 +100,25 @@ func (c *Component) retryPing(ctx context.Context) error {
 		retry.Delay(pingInitialDelay),
 		retry.MaxDelay(pingMaxDelay),
 		retry.LastErrorOnly(true),
-		retry.OnRetry(c.onPingRetry),
+		retry.OnRetry(component.onPingRetry),
 	)
 }
 
-func (c *Component) onPingRetry(n uint, err error) {
-	c.Logger().Warn(
-		fmt.Sprintf("retrying ping attempt #%d for connection string: %s", n+1, c.connectionString),
+func (component *Component) onPingRetry(n uint, err error) {
+	component.Logger().Warn(
+		fmt.Sprintf("retrying ping attempt #%d for connection string: %s", n+1, component.connectionString),
 		zap.Error(err),
 	)
 }
 
-func (c *Component) runMigrations() error {
-	if c.migrationsDir == "" {
-		c.Logger().Warn("skipping migrations because migrations directory is not set")
+func (component *Component) runMigrations() error {
+	if component.migrationsDir == "" {
+		component.Logger().Warn("skipping migrations because migrations directory is not set")
 		return nil
 	}
 
 	// Open a standard database connection using the native driver
-	db, err := sql.Open("postgres", c.connectionString)
+	db, err := sql.Open("postgres", component.connectionString)
 	if err != nil {
 		return err
 	}
@@ -127,7 +131,7 @@ func (c *Component) runMigrations() error {
 	}
 
 	// Create an instance of the file source
-	source, err := (&file.File{}).Open("file://" + c.migrationsDir)
+	source, err := (&file.File{}).Open("file://" + component.migrationsDir)
 	if err != nil {
 		return err
 	}
@@ -143,7 +147,7 @@ func (c *Component) runMigrations() error {
 		return err
 	}
 
-	c.Logger().Info("migrations successfully applied")
+	component.Logger().Info("migrations successfully applied")
 
 	return nil
 }

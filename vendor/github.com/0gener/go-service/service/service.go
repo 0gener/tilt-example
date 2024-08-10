@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/0gener/go-service/components"
 	"os/signal"
 	"sync"
 	"syscall"
@@ -50,17 +51,23 @@ func New(name string, opts ...Option) (*Service, error) {
 	return service, nil
 }
 
+// Run starts the lifecycle of the service. This is a blocking statement.
+// It blocks here until a lifecycle error occurs. A lifecycle error could be:
+// - an error during configuration/startup
+// - an error from a long-running start routine
+// - a context cancellation (timeout/interrupt signal)
 func (s *Service) Run() error {
-	// Block here until a lifecycle error occurs. A lifecycle error could be:
-	// - an error during configuration/startup
-	// - an error from a long-running start routine
-	// - a context cancellation (timeout/interrupt signal)
 	var lifecycleErr error
 	if err := s.runLifecycle(s.runCtx); err != nil {
 		lifecycleErr = fmt.Errorf("service lifecycle: %w", err)
 	}
 
 	return s.runShutdown(s.shutdownCtx, lifecycleErr)
+}
+
+// GetComponent returns a registered component by name.
+func (s *Service) GetComponent(name string) components.Component {
+	return s.componentsManager.GetComponent(name)
 }
 
 func (s *Service) runLifecycle(ctx context.Context) error {

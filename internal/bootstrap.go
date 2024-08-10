@@ -3,6 +3,7 @@ package internal
 import (
 	"github.com/0gener/go-service/lib/http"
 	"github.com/0gener/go-service/lib/postgres"
+	"github.com/0gener/go-service/lib/probes"
 	"github.com/0gener/go-service/service"
 	"github.com/0gener/tilt-example/internal/components/controller"
 	"github.com/0gener/tilt-example/internal/components/repository"
@@ -27,6 +28,9 @@ func Bootstrap() error {
 		),
 		service.WithComponent(repository.New()),
 		service.WithComponent(controller.New()),
+		service.WithComponent(probes.New(),
+			probes.WithMonitoredComponents(postgres.ComponentName),
+		),
 	)
 	if err != nil {
 		return err

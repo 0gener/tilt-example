@@ -1,9 +1,10 @@
-# github.com/0gener/go-service v0.1.0
+# github.com/0gener/go-service v0.2.0
 ## explicit; go 1.22.4
 github.com/0gener/go-service/components
 github.com/0gener/go-service/internal/logfields
 github.com/0gener/go-service/lib/http
 github.com/0gener/go-service/lib/postgres
+github.com/0gener/go-service/lib/probes
 github.com/0gener/go-service/service
 github.com/0gener/go-service/utils
 # github.com/avast/retry-go v3.0.0+incompatible

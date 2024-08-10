@@ -24,9 +24,21 @@ func NewManager() *Manager {
 	}
 }
 
+// Register registers a component.
 func (m *Manager) Register(component Component, opts ...Option) {
 	m.components = append(m.components, component)
 	m.componentsOptions[component.Name()] = opts
+}
+
+// GetComponent returns a registered component by name.
+func (m *Manager) GetComponent(name string) Component {
+	for _, component := range m.components {
+		if component.Name() == name {
+			return component
+		}
+	}
+
+	return nil
 }
 
 // Configure configures all registered components.

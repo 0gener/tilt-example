@@ -50,7 +50,7 @@ func New() *Component {
 	}
 }
 
-func (c *Component) DefaultOptions() []components.Option {
+func (component *Component) DefaultOptions() []components.Option {
 	return []components.Option{
 		WithServerHost(defaultServerHost),
 		WithServerPort(defaultServerPort),
@@ -71,20 +71,20 @@ func (c *Component) DefaultOptions() []components.Option {
 }
 
 // Configure performs initial component setup.
-func (c *Component) Configure(_ context.Context) error {
-	c.middlewares = append(c.middlewares, c.metricsMiddleware)
-	c.router.Use(c.middlewares...)
-	c.RegisterRoutes(c.routes...)
-	c.NotifyStatus(components.CONFIGURED)
+func (component *Component) Configure(_ context.Context) error {
+	component.middlewares = append(component.middlewares, component.metricsMiddleware)
+	component.router.Use(component.middlewares...)
+	component.RegisterRoutes(component.routes...)
+	component.NotifyStatus(components.CONFIGURED)
 	return nil
 }
 
 // Start performs actions required to begin the component lifecycle.
-func (c *Component) Start(_ context.Context) error {
-	addr := fmt.Sprintf("%s:%d", c.serverHost, c.serverPort)
-	c.server = &http.Server{
+func (component *Component) Start(_ context.Context) error {
+	addr := fmt.Sprintf("%s:%d", component.serverHost, component.serverPort)
+	component.server = &http.Server{
 		Addr:    addr,
-		Handler: c.router,
+		Handler: component.router,
 	}
 
 	listener, err := net.Listen("tcp", addr)
@@ -92,52 +92,52 @@ func (c *Component) Start(_ context.Context) error {
 		return fmt.Errorf("failed to start HTTP server: %w", err)
 	}
 
-	c.Logger().Info(fmt.Sprintf("server started, listening on %q", addr))
-	c.NotifyStatus(components.STARTED)
+	component.Logger().Info(fmt.Sprintf("server started, listening on %q", addr))
+	component.NotifyStatus(components.STARTED)
 
-	if err = c.server.Serve(listener); err != nil && !errors.Is(err, http.ErrServerClosed) {
-		c.NotifyError(err)
+	if err = component.server.Serve(listener); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		component.NotifyError(err)
 	}
 
 	return nil
 }
 
 // Shutdown performs actions required to gracefully shutdown the component lifecycle.
-func (c *Component) Shutdown(ctx context.Context) error {
-	if c.server == nil {
-		c.NotifyStatus(components.STOPPED)
+func (component *Component) Shutdown(ctx context.Context) error {
+	if component.server == nil {
+		component.NotifyStatus(components.STOPPED)
 		return nil
 	}
 
 	shutdownCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
-	if err := c.server.Shutdown(shutdownCtx); err != nil && errors.Is(err, http.ErrServerClosed) {
+	if err := component.server.Shutdown(shutdownCtx); err != nil && errors.Is(err, http.ErrServerClosed) {
 		return fmt.Errorf("shutting down HTTP server: %w", err)
 	}
 
-	c.NotifyStatus(components.STOPPED)
+	component.NotifyStatus(components.STOPPED)
 
 	return nil
 }
 
-func (c *Component) RegisterRoutes(routes ...Route) {
+func (component *Component) RegisterRoutes(routes ...Route) {
 	for _, route := range routes {
-		c.router.Handle(route.HTTPMethod, route.RelativePath, route.Handlers...)
+		component.router.Handle(route.HTTPMethod, route.RelativePath, route.Handlers...)
 	}
 }
 
 // GetServerHost returns the server host.
-func (c *Component) GetServerHost() string {
-	return c.serverHost
+func (component *Component) GetServerHost() string {
+	return component.serverHost
 }
 
 // GetServerPort returns the server port.
-func (c *Component) GetServerPort() int {
-	return c.serverPort
+func (component *Component) GetServerPort() int {
+	return component.serverPort
 }
 
 // GetRoutes returns the registered routes.
-func (c *Component) GetRoutes() []Route {
-	return c.routes
+func (component *Component) GetRoutes() []Route {
+	return component.routes
 }

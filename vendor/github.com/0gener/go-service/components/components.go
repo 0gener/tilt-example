@@ -70,6 +70,9 @@ type Component interface {
 	// StatusChan returns the component's channel for outputting status updates.
 	StatusChan() <-chan Status
 
+	// GetStatus returns the current status of the component.
+	GetStatus() Status
+
 	// SetDependencyManager sets the component's manager.
 	SetDependencyManager(manager *Manager)
 
