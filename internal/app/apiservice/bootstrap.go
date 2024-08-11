@@ -1,16 +1,16 @@
-package internal
+package apiservice
 
 import (
 	"github.com/0gener/go-service/lib/http"
 	"github.com/0gener/go-service/lib/postgres"
 	"github.com/0gener/go-service/lib/probes"
 	"github.com/0gener/go-service/service"
-	"github.com/0gener/tilt-example/internal/components/controller"
-	"github.com/0gener/tilt-example/internal/components/repository"
+	"github.com/0gener/tilt-example/internal/app/apiservice/components/controller"
+	"github.com/0gener/tilt-example/internal/app/apiservice/components/repository"
 )
 
 const (
-	ServiceName = "tiltexample"
+	ServiceName = "apiservice"
 )
 
 func Bootstrap() error {

@@ -1,4 +1,4 @@
-package internal
+package apiservice
 
 import (
 	"github.com/0gener/go-service/utils"

@@ -2,9 +2,9 @@ load('ext://helm_remote', 'helm_remote')
 
 include('./tilt-extensions/observability/Tiltfile')
 
-image_name = 'tiltexample'
-helm_chart_dir = './charts/tiltexample'
-namespace = 'tiltexample'
+image_name = 'apiservice'
+helm_chart_dir = './charts/apiservice'
+namespace = 'apiservice'
 
 k8s_yaml([blob("""
 apiVersion: v1
@@ -15,9 +15,9 @@ metadata:
 
 postgres_release_name= 'postgres'
 postgres_namespace= 'postgres'
-postgres_username = 'tiltexample'
+postgres_username = 'apiservice'
 postgres_password = 'password'
-postgres_database = 'tiltexample'
+postgres_database = 'apiservice'
 postgres_service_name = 'postgres-postgresql'
 postgres_host = '{}.{}.svc.cluster.local'.format(postgres_service_name, postgres_namespace)
 postgres_port = '5432'
@@ -39,7 +39,7 @@ helm_remote(
     ]
 )
 
-docker_build(image_name, '.', dockerfile='Dockerfile')
+docker_build(image_name, '.', dockerfile='./docker/apiservice/Dockerfile')
 
 helm_release = helm(
     helm_chart_dir,

@@ -4,7 +4,7 @@ import (
 	"context"
 	"github.com/0gener/go-service/components"
 	httpComp "github.com/0gener/go-service/lib/http"
-	"github.com/0gener/tilt-example/internal/components/repository"
+	"github.com/0gener/tilt-example/internal/app/apiservice/components/repository"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"net/http"

@@ -1,6 +1,8 @@
 package controller
 
-import "github.com/0gener/tilt-example/internal/components/repository"
+import (
+	"github.com/0gener/tilt-example/internal/app/apiservice/components/repository"
+)
 
 func MapItemsToResponse(items []repository.Item) ListItemsResponse {
 	responseItems := make(ListItemsResponse, len(items))

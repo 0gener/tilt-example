@@ -6,16 +6,18 @@ FROM golang:1.22-bookworm AS builder
 WORKDIR /app
 
 # Copy go.mod and go.sum files
-COPY go.mod go.sum ./
+COPY ../../go.mod ./
+COPY ../../go.sum ./
 
 # Copy the vendor directory
-COPY vendor/ ./vendor/
+COPY ../../vendor ./vendor/
 
-# Copy the rest of the application code
-COPY . .
+# Copy the necessary folders for apiservice
+COPY ../../../cmd/apiservice ./cmd/apiservice
+COPY ../../../internal/app/apiservice ./internal/app/apiservice
 
 # Build the Go application
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /go/bin/tiltexample ./cmd/tiltexample
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /go/bin/apiservice ./cmd/apiservice
 
 # Use the distroless base image for the final stage
 FROM gcr.io/distroless/base-debian12
@@ -28,11 +30,11 @@ ENV DATABASE_MIGRATIONS_DIR="/app/migrations"
 WORKDIR /app
 
 # Copy the built Go binary from the builder stage
-COPY --from=builder /app/internal/migrations $DATABASE_MIGRATIONS_DIR
-COPY --from=builder /go/bin/tiltexample /app/
+COPY --from=builder /app/internal/app/apiservice/migrations $DATABASE_MIGRATIONS_DIR
+COPY --from=builder /go/bin/apiservice /app/
 
 # Run as non-root user
 USER nonroot:nonroot
 
 # Define the entry point of the container
-ENTRYPOINT ["./tiltexample"]
+ENTRYPOINT ["./apiservice"]
