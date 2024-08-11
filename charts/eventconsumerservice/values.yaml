@@ -1,0 +1,11 @@
+service:
+  replicas: 3
+  port: 8080
+
+prometheus:
+  path: "/metrics"
+  port: "8080"
+
+image:
+  repository: "repo"
+  tag: "tag"

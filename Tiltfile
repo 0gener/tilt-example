@@ -2,10 +2,6 @@ load('ext://helm_remote', 'helm_remote')
 
 include('./tilt-extensions/observability/Tiltfile')
 
-image_name = 'apiservice'
-helm_chart_dir = './charts/apiservice'
-namespace = 'apiservice'
-
 k8s_yaml([blob("""
 apiVersion: v1
 kind: Namespace
@@ -39,17 +35,41 @@ helm_remote(
     ]
 )
 
-docker_build(image_name, '.', dockerfile='./docker/apiservice/Dockerfile')
+# apiservice
+apiservice_image_name = 'apiservice'
+apiservice_helm_chart_dir = './charts/apiservice'
+apiservice_namespace = 'apiservice'
 
-helm_release = helm(
-    helm_chart_dir,
-    name=image_name,
-    namespace=namespace,
+docker_build(apiservice_image_name, '.', dockerfile='./docker/apiservice/Dockerfile')
+
+apiservice_helm_release = helm(
+    apiservice_helm_chart_dir,
+    name=apiservice_image_name,
+    namespace=apiservice_namespace,
     set=[
-        'image.repository=' + image_name,
+        'image.repository=' + apiservice_image_name,
         'image.tag=latest',
         'database.connection_string=' + database_connection_string,
     ]
 )
 
-k8s_yaml(helm_release)
+k8s_yaml(apiservice_helm_release)
+
+# eventconsumerservice
+eventconsumerservice_image_name = 'eventconsumerservice'
+eventconsumerservice_helm_chart_dir = './charts/eventconsumerservice'
+eventconsumerservice_namespace = 'eventconsumerservice'
+
+docker_build(eventconsumerservice_image_name, '.', dockerfile='./docker/eventconsumerservice/Dockerfile')
+
+eventconsumerservice_helm_release = helm(
+    eventconsumerservice_helm_chart_dir,
+    name=eventconsumerservice_image_name,
+    namespace=eventconsumerservice_namespace,
+    set=[
+        'image.repository=' + eventconsumerservice_image_name,
+        'image.tag=latest',
+    ]
+)
+
+k8s_yaml(eventconsumerservice_helm_release)
