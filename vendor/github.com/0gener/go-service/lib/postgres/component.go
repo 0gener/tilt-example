@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"fmt"
 	"github.com/0gener/go-service/components"
 	"github.com/avast/retry-go"
 	"github.com/golang-migrate/migrate/v4"
@@ -106,8 +105,10 @@ func (component *Component) retryPing(ctx context.Context) error {
 
 func (component *Component) onPingRetry(n uint, err error) {
 	component.Logger().Warn(
-		fmt.Sprintf("retrying ping attempt #%d for connection string: %s", n+1, component.connectionString),
+		"retrying ping attempt",
 		zap.Error(err),
+		zap.Uint("attempt", n+1),
+		zap.String("connection_string", component.connectionString),
 	)
 }
 

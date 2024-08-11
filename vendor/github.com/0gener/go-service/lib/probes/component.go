@@ -2,7 +2,7 @@ package probes
 
 import (
 	"context"
-	"errors"
+	"fmt"
 	"github.com/0gener/go-service/components"
 	httpComponent "github.com/0gener/go-service/lib/http"
 	"github.com/gin-gonic/gin"
@@ -12,10 +12,6 @@ import (
 
 const (
 	ComponentName = "probes"
-)
-
-var (
-	ErrNotMonitoredComponent = errors.New("component is not a monitored component")
 )
 
 type MonitoredComponent interface {
@@ -54,11 +50,13 @@ func (component *Component) Configure(_ context.Context) error {
 			RelativePath: "/v1/live",
 			HTTPMethod:   http.MethodGet,
 			Handlers:     []gin.HandlerFunc{component.handleLive},
+			IgnoreLogs:   true,
 		},
 		httpComponent.Route{
 			RelativePath: "/v1/ready",
 			HTTPMethod:   http.MethodGet,
 			Handlers:     []gin.HandlerFunc{component.handleReady},
+			IgnoreLogs:   true,
 		},
 	)
 
@@ -85,7 +83,7 @@ func (component *Component) loadMonitoredComponents() error {
 		if monitoredComponent, ok := comp.(MonitoredComponent); ok {
 			component.monitoredComponents = append(component.monitoredComponents, monitoredComponent)
 		} else {
-			return ErrNotMonitoredComponent
+			return fmt.Errorf("%s: %w", monitoredComponentName, ErrNotMonitoredComponent)
 		}
 	}
 

@@ -29,7 +29,7 @@ spec:
             httpGet:
               path: /v1/live
               port: {{ .Values.service.port }}
-            initialDelaySeconds: 10
+            initialDelaySeconds: 5
             periodSeconds: 10
             timeoutSeconds: 5
             failureThreshold: 3

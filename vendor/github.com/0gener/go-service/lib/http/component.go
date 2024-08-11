@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	ginprometheus "github.com/zsais/go-gin-prometheus"
+	"go.uber.org/zap"
 	"net"
 	"net/http"
 	"time"
@@ -31,6 +32,7 @@ type Component struct {
 	serverPort int
 
 	routes            []Route
+	ignoredRoutes     map[string]bool
 	middlewares       gin.HandlersChain
 	metricsMiddleware gin.HandlerFunc
 }
@@ -39,6 +41,7 @@ type Route struct {
 	RelativePath string
 	HTTPMethod   string
 	Handlers     []gin.HandlerFunc
+	IgnoreLogs   bool
 }
 
 func New() *Component {
@@ -47,6 +50,7 @@ func New() *Component {
 	return &Component{
 		BaseComponent: *components.NewBaseComponent(ComponentName),
 		router:        gin.New(),
+		ignoredRoutes: make(map[string]bool),
 	}
 }
 
@@ -59,6 +63,7 @@ func (component *Component) DefaultOptions() []components.Option {
 		),
 		WithMiddlewares([]gin.HandlerFunc{
 			gin.Recovery(),
+			component.RequestLoggerMiddleware(),
 		}),
 		WithRoute(Route{
 			RelativePath: metricsPath,
@@ -66,6 +71,7 @@ func (component *Component) DefaultOptions() []components.Option {
 			Handlers: []gin.HandlerFunc{
 				gin.WrapF(promhttp.Handler().ServeHTTP),
 			},
+			IgnoreLogs: true,
 		}),
 	}
 }
@@ -124,6 +130,10 @@ func (component *Component) Shutdown(ctx context.Context) error {
 func (component *Component) RegisterRoutes(routes ...Route) {
 	for _, route := range routes {
 		component.router.Handle(route.HTTPMethod, route.RelativePath, route.Handlers...)
+
+		if route.IgnoreLogs {
+			component.ignoredRoutes[route.RelativePath] = true
+		}
 	}
 }
 
@@ -140,4 +150,30 @@ func (component *Component) GetServerPort() int {
 // GetRoutes returns the registered routes.
 func (component *Component) GetRoutes() []Route {
 	return component.routes
+}
+
+func (component *Component) RequestLoggerMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if component.ignoredRoutes[c.Request.URL.Path] {
+			// Skip logging for this route
+			c.Next()
+			return
+		}
+
+		startTime := time.Now()
+
+		c.Next()
+
+		duration := time.Since(startTime)
+		statusCode := c.Writer.Status()
+
+		component.Logger().Info("HTTP request processed",
+			zap.String("method", c.Request.Method),
+			zap.String("path", c.Request.URL.Path),
+			zap.Int("status", statusCode),
+			zap.Duration("duration", duration),
+			zap.String("client_ip", c.ClientIP()),
+			zap.String("user_agent", c.Request.UserAgent()),
+		)
+	}
 }
