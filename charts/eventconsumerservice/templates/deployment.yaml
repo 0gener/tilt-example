@@ -22,6 +22,11 @@ spec:
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           ports:
             - containerPort: {{ .Values.service.port }}
+          env:
+            - name: AWS_ENDPOINT
+              value: {{ .Values.messaging.aws_endpoint }}
+            - name: EVENTS_QUEUE_URL
+              value: {{ .Values.messaging.events_queue_url }}
           livenessProbe:
             httpGet:
               path: /v1/live

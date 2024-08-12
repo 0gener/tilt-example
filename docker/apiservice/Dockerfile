@@ -15,6 +15,7 @@ COPY ../../vendor ./vendor/
 # Copy the necessary folders for apiservice
 COPY ../../../cmd/apiservice ./cmd/apiservice
 COPY ../../../internal/app/apiservice ./internal/app/apiservice
+COPY ../../../internal/app/common ./internal/app/common
 
 # Build the Go application
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /go/bin/apiservice ./cmd/apiservice

@@ -15,6 +15,7 @@ COPY ../../vendor ./vendor/
 # Copy the necessary folders for eventconsumerservice
 COPY ../../../cmd/eventconsumerservice ./cmd/eventconsumerservice
 COPY ../../../internal/app/eventconsumerservice ./internal/app/eventconsumerservice
+COPY ../../../internal/app/common ./internal/app/common
 
 # Build the Go application
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /go/bin/eventconsumerservice ./cmd/eventconsumerservice

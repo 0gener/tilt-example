@@ -25,6 +25,10 @@ spec:
           env:
             - name: DATABASE_CONNECTION_STRING
               value: {{ .Values.database.connection_string }}
+            - name: AWS_ENDPOINT
+              value: {{ .Values.messaging.aws_endpoint }}
+            - name: EVENTS_TOPIC_ARN
+              value: {{ .Values.messaging.events_topic_arn }}
           livenessProbe:
             httpGet:
               path: /v1/live

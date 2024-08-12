@@ -5,12 +5,16 @@ import (
 )
 
 const (
+	EnvAWSEndpoint              = "AWS_ENDPOINT"
+	EnvEventsTopicARN           = "EVENTS_TOPIC_ARN"
 	EnvDatabaseConnectionString = "DATABASE_CONNECTION_STRING"
 	EnvDatabaseMigrationsDir    = "DATABASE_MIGRATIONS_DIR"
 )
 
 type Config struct {
-	Database DatabaseConfig
+	AWSEndpoint    string
+	EventsTopicARN string
+	Database       DatabaseConfig
 }
 
 type DatabaseConfig struct {
@@ -19,6 +23,11 @@ type DatabaseConfig struct {
 }
 
 func loadConfig() (*Config, error) {
+	eventsTopicArn, err := utils.GetRequiredString(EnvEventsTopicARN)
+	if err != nil {
+		return nil, err
+	}
+
 	connectionString, err := utils.GetRequiredString(EnvDatabaseConnectionString)
 	if err != nil {
 		return nil, err
@@ -30,6 +39,8 @@ func loadConfig() (*Config, error) {
 	}
 
 	return &Config{
+		AWSEndpoint:    utils.GetStringOrDefault(EnvAWSEndpoint, ""),
+		EventsTopicARN: eventsTopicArn,
 		Database: DatabaseConfig{
 			ConnectionString: connectionString,
 			MigrationsDir:    migrationsDir,

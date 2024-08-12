@@ -7,5 +7,9 @@ prometheus:
   port: "8080"
 
 image:
-  repository: "repo"
-  tag: "tag"
+  repository: ""
+  tag: ""
+
+messaging:
+  aws_endpoint: ""
+  events_queue_url: ""

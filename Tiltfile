@@ -9,6 +9,13 @@ metadata:
     name: postgres
 """)])
 
+k8s_yaml([blob("""
+apiVersion: v1
+kind: Namespace
+metadata:
+    name: localstack
+""")])
+
 postgres_release_name= 'postgres'
 postgres_namespace= 'postgres'
 postgres_username = 'apiservice'
@@ -35,6 +42,26 @@ helm_remote(
     ]
 )
 
+# localstack
+helm_remote(
+    'localstack',
+    repo_name='localstack',
+    release_name='localstack',
+    repo_url='https://helm.localstack.cloud',
+    namespace='localstack',
+    set=[
+        'startServices=sns\\,sqs',
+        'service.type=ClusterIP',
+        'service.ports={}'.format(4566),
+    ]
+)
+
+localstack_pod = local('kubectl get pods -n localstack -l "app.kubernetes.io/name=localstack" -o jsonpath="{.items[0].metadata.name}"')
+
+local('kubectl exec -n localstack {} -- awslocal sns create-topic --name events-topic'.format(localstack_pod))
+local('kubectl exec -n localstack {} -- awslocal sqs create-queue --queue-name eventconsumerservice-queue'.format(localstack_pod))
+local('kubectl exec -n localstack {} -- awslocal sns subscribe --topic-arn arn:aws:sns:us-east-1:000000000000:events-topic --protocol sqs --notification-endpoint arn:aws:sqs:us-east-1:000000000000:eventconsumerservice-queue'.format(localstack_pod))
+
 # apiservice
 apiservice_image_name = 'apiservice'
 apiservice_helm_chart_dir = './charts/apiservice'
@@ -50,6 +77,8 @@ apiservice_helm_release = helm(
         'image.repository=' + apiservice_image_name,
         'image.tag=latest',
         'database.connection_string=' + database_connection_string,
+        'messaging.aws_endpoint=http://localstack.localstack.svc.cluster.local:4566',
+        'messaging.events_topic_arn=arn:aws:sns:us-east-1:000000000000:events-topic',
     ]
 )
 
@@ -69,6 +98,8 @@ eventconsumerservice_helm_release = helm(
     set=[
         'image.repository=' + eventconsumerservice_image_name,
         'image.tag=latest',
+        'messaging.aws_endpoint=http://localstack.localstack.svc.cluster.local:4566',
+        'messaging.events_queue_url=http://sqs.us-east-1.localhost.localstack.cloud:4566/000000000000/eventconsumerservice-queue',
     ]
 )
 

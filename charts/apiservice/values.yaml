@@ -10,5 +10,9 @@ database:
   connection_string: "postgres://username:password@hostname:1234/dbname?sslmode=disable"
 
 image:
-  repository: "repo"
-  tag: "tag"
+  repository: ""
+  tag: ""
+
+messaging:
+  aws_endpoint: ""
+  events_topic_arn: ""
