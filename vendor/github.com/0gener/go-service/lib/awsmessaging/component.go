@@ -11,6 +11,7 @@ import (
 	snstypes "github.com/aws/aws-sdk-go-v2/service/sns/types"
 	"github.com/aws/aws-sdk-go-v2/service/sqs"
 	sqstypes "github.com/aws/aws-sdk-go-v2/service/sqs/types"
+	"github.com/google/uuid"
 )
 
 const (
@@ -133,8 +134,10 @@ func extractMessage(msg sqstypes.Message) (*Message, error) {
 	awsAttributes := notification.MessageAttributes
 
 	return &Message{
+		ID:         uuid.New(),
 		Data:       []byte(awsMessage),
 		Attributes: extractMessageAttributes(awsAttributes),
+		Err:        nil,
 	}, nil
 }
 

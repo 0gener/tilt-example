@@ -1,11 +1,15 @@
 package awsmessaging
 
+import "github.com/google/uuid"
+
 type MessageOpt func(*Message)
 type MessageAttributes map[string]string
 
 type Message struct {
+	ID         uuid.UUID
 	Data       []byte
 	Attributes MessageAttributes
+	Err        error
 }
 
 func WithAttribute(key string, val string) MessageOpt {

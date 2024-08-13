@@ -38,7 +38,7 @@ func (component *Component) Configure(_ context.Context) error {
 
 	component.sub = component.messaging.Subscribe(
 		component.queueUrl,
-		component.handle,
+		component.handleBatch,
 	)
 
 	component.NotifyStatus(components.CONFIGURED)
@@ -64,9 +64,15 @@ func (component *Component) Shutdown(_ context.Context) error {
 	return nil
 }
 
-func (component *Component) handle(msg *awsmessaging.Message) error {
+func (component *Component) handleBatch(messages []*awsmessaging.Message) {
+	for _, message := range messages {
+		message.Err = component.handleSingleMessage(message)
+	}
+}
+
+func (component *Component) handleSingleMessage(message *awsmessaging.Message) error {
 	var event common.ItemCreatedEvent
-	if err := json.Unmarshal(msg.Data, &event); err != nil {
+	if err := json.Unmarshal(message.Data, &event); err != nil {
 		return err
 	}
 

@@ -4,7 +4,8 @@ import (
 	"context"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/sqs"
-	awstypes "github.com/aws/aws-sdk-go-v2/service/sqs/types"
+	sqstypes "github.com/aws/aws-sdk-go-v2/service/sqs/types"
+	"github.com/google/uuid"
 	"go.uber.org/zap"
 	"time"
 )
@@ -62,7 +63,7 @@ func WithWaitTimeInSeconds(waitTimeInSeconds int32) SubOpt {
 
 type SubOpt func(cfg *subscriptionConfig)
 
-type HandlerFunc func(message *Message) error
+type HandlerFunc func(message []*Message)
 
 func newSubscription(sqs *sqs.Client, logger *zap.Logger, queueUrl string, handler HandlerFunc, opts ...SubOpt) *Subscription {
 	cfg := loadSubscriptionConfig(opts...)
@@ -101,9 +102,9 @@ func (s *Subscription) Start() error {
 					continue
 				}
 
-				for _, msg := range out.Messages {
+				if len(out.Messages) > 0 {
 					s.semaphore <- struct{}{}
-					go s.handleMessage(msg)
+					go s.handleBatch(out.Messages)
 				}
 			}
 		}
@@ -116,27 +117,46 @@ func (s *Subscription) Stop() {
 	s.cancel()
 }
 
-func (s *Subscription) handleMessage(msg awstypes.Message) {
+func (s *Subscription) handleBatch(awsMessages []sqstypes.Message) {
 	defer func() {
 		<-s.semaphore
 	}()
 
-	s.logger.Debug("received message", zap.Any("message", msg))
+	var messages []*Message
+	deleteMessagesMap := make(map[uuid.UUID]sqstypes.DeleteMessageBatchRequestEntry)
+	for _, awsMessage := range awsMessages {
+		message, err := extractMessage(awsMessage)
+		if err != nil {
+			s.logger.Warn("failed to extract message", zap.Error(err))
+			continue
+		}
 
-	message, err := extractMessage(msg)
-	if err != nil {
-		s.logger.Error("failed to extract message", zap.Error(err))
-		return
+		messages = append(messages, message)
+		deleteMessagesMap[message.ID] = sqstypes.DeleteMessageBatchRequestEntry{
+			Id:            aws.String(message.ID.String()),
+			ReceiptHandle: awsMessage.ReceiptHandle,
+		}
 	}
 
-	err = s.handler(message)
-	if err == nil {
-		_, err = s.sqs.DeleteMessage(context.TODO(), &sqs.DeleteMessageInput{
-			QueueUrl:      aws.String(s.queueUrl),
-			ReceiptHandle: msg.ReceiptHandle,
+	s.handler(messages)
+
+	var successMessagesDeleteEntries []sqstypes.DeleteMessageBatchRequestEntry
+	for _, message := range messages {
+		if message.Err != nil {
+			s.logger.Warn("failed to process message", zap.Error(message.Err))
+			continue
+		}
+
+		successMessagesDeleteEntries = append(successMessagesDeleteEntries, deleteMessagesMap[message.ID])
+	}
+
+	if len(successMessagesDeleteEntries) > 0 {
+		_, err := s.sqs.DeleteMessageBatch(s.ctx, &sqs.DeleteMessageBatchInput{
+			QueueUrl: aws.String(s.queueUrl),
+			Entries:  successMessagesDeleteEntries,
 		})
 		if err != nil {
-			s.logger.Error("failed to delete message", zap.Error(err))
+			s.logger.Error("failed to delete messages", zap.Error(err))
 		}
 	}
 }
